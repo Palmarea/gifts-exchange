@@ -185,6 +185,19 @@ function updateParticipantsList() {
 }
 
 // ============================================================
+// ADMIN VA A SU LISTA DE DESEOS
+// ============================================================
+function goToMyWishlist() {
+    const userEmail = localStorage.getItem('nikolaus-user-email');
+    const participant = groupData.participants.find(p => p.email === userEmail);
+    
+    if (participant) {
+        currentUser = participant;
+        showScreen('screen-wishlist');
+    }
+}
+
+// ============================================================
 // COPIAR LINK
 // ============================================================
 function copyLink() {
@@ -353,8 +366,14 @@ async function saveWishlist(event) {
             participants: groupData.participants
         });
         
-        startCountdown();
-        showScreen('screen-waiting');
+        // Si es admin, volver a la pantalla de admin
+        if (currentUser.isAdmin) {
+            updateGroupCreatedScreen();
+            showScreen('screen-group-created');
+        } else {
+            startCountdown();
+            showScreen('screen-waiting');
+        }
     } catch (error) {
         console.error('Error:', error);
         alert('Error al guardar la lista');
@@ -573,3 +592,4 @@ window.showGiftOption = showGiftOption;
 window.showKnowStore = showKnowStore;
 window.checkPrice = checkPrice;
 window.toggleMaxBudget = toggleMaxBudget;
+window.goToMyWishlist = goToMyWishlist;
