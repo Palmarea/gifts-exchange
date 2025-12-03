@@ -1,10 +1,9 @@
 /* ═══════════════════════════════════════════════════════════
-   NIKOLAUS - Secret Santa
-   JavaScript Principal
+   NIKOLAUS - Secret Santa con Firebase
    ═══════════════════════════════════════════════════════════ */
 
 // ============================================================
-// DATOS DEL GRUPO (simulado - en producción usarías una base de datos)
+// DATOS DEL GRUPO
 // ============================================================
 let groupData = {
     id: null,
@@ -15,7 +14,7 @@ let groupData = {
     exchangeDate: '',
     participants: [],
     sorteoRealizado: false,
-    assignments: {} // { participantEmail: assignedToEmail }
+    assignments: {}
 };
 
 let currentUser = {
@@ -28,12 +27,10 @@ let currentUser = {
 // NAVEGACIÓN ENTRE PANTALLAS
 // ============================================================
 function showScreen(screenId) {
-    // Ocultar todas las pantallas
     document.querySelectorAll('.screen').forEach(screen => {
         screen.classList.remove('active');
     });
     
-    // Mostrar la pantalla seleccionada
     const targetScreen = document.getElementById(screenId);
     if (targetScreen) {
         targetScreen.classList.add('active');
@@ -65,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const audio = document.getElementById('christmas-music');
     
     if (audio) {
-        audio.volume = 0.15; // Volumen bajo y elegante
+        audio.volume = 0.15;
     }
     
     if (musicToggle && audio) {
@@ -90,9 +87,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
-// CREAR GRUPO
+// CREAR GRUPO (con Firebase)
 // ============================================================
-function createGroup(event) {
+async function createGroup(event) {
     event.preventDefault();
     
     const groupName = document.getElementById('group-name').value;
@@ -109,10 +106,10 @@ function createGroup(event) {
         return;
     }
     
-    // Generar ID único para el grupo
+    // Generar ID único
     const groupId = generateGroupId();
     
-    // Guardar datos del grupo
+    // Crear datos del grupo
     groupData = {
         id: groupId,
         name: groupName,
@@ -130,14 +127,21 @@ function createGroup(event) {
         assignments: {}
     };
     
-    // Guardar en localStorage
-    saveGroupData();
-    
-    // Actualizar la UI
-    updateGroupCreatedScreen();
-    
-    // Mostrar pantalla de grupo creado
-    showScreen('screen-group-created');
+    try {
+        // Guardar en Firebase
+        await db.collection('grupos').doc(groupId).set(groupData);
+        
+        // Guardar ID local para el admin
+        localStorage.setItem('nikolaus-current-group', groupId);
+        localStorage.setItem('nikolaus-user-email', adminEmail);
+        
+        // Actualizar UI
+        updateGroupCreatedScreen();
+        showScreen('screen-group-created');
+    } catch (error) {
+        console.error('Error al crear grupo:', error);
+        alert('Error al crear el grupo. Intenta de nuevo.');
+    }
 }
 
 function generateGroupId() {
@@ -145,17 +149,14 @@ function generateGroupId() {
 }
 
 function updateGroupCreatedScreen() {
-    // Generar link para compartir
     const shareUrl = `${window.location.origin}${window.location.pathname}?group=${groupData.id}`;
     document.getElementById('share-link').value = shareUrl;
     
-    // Mostrar info del grupo
     document.getElementById('display-group-name').textContent = groupData.name;
     document.getElementById('display-budget-min').textContent = groupData.budgetMin;
     document.getElementById('display-budget-max').textContent = groupData.budgetMax || '∞';
     document.getElementById('display-date').textContent = formatDate(groupData.exchangeDate);
     
-    // Actualizar lista de participantes
     updateParticipantsList();
 }
 
@@ -172,7 +173,6 @@ function updateParticipantsList() {
     
     count.textContent = groupData.participants.length;
     
-    // Habilitar botón de sorteo si hay al menos 3 personas con lista completa
     const readyParticipants = groupData.participants.filter(p => p.wishlist.length >= 3);
     const btnSorteo = document.getElementById('btn-start-sorteo');
     if (readyParticipants.length >= 3) {
@@ -203,35 +203,57 @@ function copyLink() {
 }
 
 // ============================================================
-// UNIRSE A GRUPO
+// VERIFICAR URL Y CARGAR GRUPO (con Firebase)
 // ============================================================
-function checkUrlForGroup() {
+async function checkUrlForGroup() {
     const urlParams = new URLSearchParams(window.location.search);
     const groupId = urlParams.get('group');
     
     if (groupId) {
-        // Intentar cargar el grupo desde URL
-        const savedGroup = localStorage.getItem('nikolaus-group-' + groupId);
-        if (savedGroup) {
-            groupData = JSON.parse(savedGroup);
-            showScreen('screen-join-group');
+        // Cargar grupo desde Firebase
+        try {
+            const doc = await db.collection('grupos').doc(groupId).get();
+            if (doc.exists) {
+                groupData = doc.data();
+                groupData.id = groupId;
+                
+                // Mostrar info del grupo en la pantalla de unirse
+                document.getElementById('invite-group-name').textContent = groupData.name;
+                document.getElementById('invite-budget-min').textContent = groupData.budgetMin;
+                document.getElementById('invite-budget-max').textContent = groupData.budgetMax || '∞';
+                document.getElementById('invite-date').textContent = formatDate(groupData.exchangeDate);
+                
+                showScreen('screen-join-group');
+            } else {
+                alert('Grupo no encontrado');
+            }
+        } catch (error) {
+            console.error('Error al cargar grupo:', error);
+            alert('Error al cargar el grupo');
         }
     } else {
-        // Si no hay grupo en URL, verificar si el usuario es admin de un grupo existente
+        // Verificar si es admin de un grupo existente
         const currentGroupId = localStorage.getItem('nikolaus-current-group');
         if (currentGroupId) {
-            const savedGroup = localStorage.getItem('nikolaus-group-' + currentGroupId);
-            if (savedGroup) {
-                groupData = JSON.parse(savedGroup);
-                // Mostrar pantalla de admin con el grupo
-                updateGroupCreatedScreen();
-                showScreen('screen-group-created');
+            try {
+                const doc = await db.collection('grupos').doc(currentGroupId).get();
+                if (doc.exists) {
+                    groupData = doc.data();
+                    groupData.id = currentGroupId;
+                    updateGroupCreatedScreen();
+                    showScreen('screen-group-created');
+                }
+            } catch (error) {
+                console.error('Error:', error);
             }
         }
     }
 }
 
-function joinGroup(event) {
+// ============================================================
+// UNIRSE A GRUPO (con Firebase)
+// ============================================================
+async function joinGroup(event) {
     event.preventDefault();
     
     const name = document.getElementById('participant-name').value;
@@ -241,11 +263,10 @@ function joinGroup(event) {
     const existingParticipant = groupData.participants.find(p => p.email === email);
     
     if (existingParticipant) {
-        // Usuario ya existe, verificar si tiene wishlist
         currentUser = existingParticipant;
+        localStorage.setItem('nikolaus-user-email', email);
         
         if (existingParticipant.wishlist.length >= 3) {
-            // Ya tiene lista, verificar si hay sorteo
             if (groupData.sorteoRealizado) {
                 showResult();
             } else {
@@ -256,7 +277,7 @@ function joinGroup(event) {
             showScreen('screen-wishlist');
         }
     } else {
-        // Verificar que el nombre no exista
+        // Verificar nombre único
         const nameExists = groupData.participants.find(p => p.name.toLowerCase() === name.toLowerCase());
         if (nameExists) {
             alert('Ya existe alguien con ese nombre. Por favor usa otro nombre.');
@@ -272,16 +293,24 @@ function joinGroup(event) {
         };
         
         groupData.participants.push(currentUser);
-        saveGroupData();
         
-        showScreen('screen-wishlist');
+        try {
+            await db.collection('grupos').doc(groupData.id).update({
+                participants: groupData.participants
+            });
+            localStorage.setItem('nikolaus-user-email', email);
+            showScreen('screen-wishlist');
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al unirse al grupo');
+        }
     }
 }
 
 // ============================================================
-// LISTA DE DESEOS
+// GUARDAR LISTA DE DESEOS (con Firebase)
 // ============================================================
-function saveWishlist(event) {
+async function saveWishlist(event) {
     event.preventDefault();
     
     const wishNames = document.querySelectorAll('.wish-name');
@@ -302,18 +331,24 @@ function saveWishlist(event) {
         return;
     }
     
-    // Actualizar el participante
+    // Actualizar participante
     const participantIndex = groupData.participants.findIndex(p => p.email === currentUser.email);
     if (participantIndex !== -1) {
         groupData.participants[participantIndex].wishlist = wishlist;
         currentUser.wishlist = wishlist;
     }
     
-    saveGroupData();
-    
-    // Iniciar countdown y mostrar pantalla de espera
-    startCountdown();
-    showScreen('screen-waiting');
+    try {
+        await db.collection('grupos').doc(groupData.id).update({
+            participants: groupData.participants
+        });
+        
+        startCountdown();
+        showScreen('screen-waiting');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al guardar la lista');
+    }
 }
 
 // ============================================================
@@ -321,7 +356,7 @@ function saveWishlist(event) {
 // ============================================================
 function startCountdown() {
     updateCountdown();
-    setInterval(updateCountdown, 60000); // Actualizar cada minuto
+    setInterval(updateCountdown, 60000);
 }
 
 function updateCountdown() {
@@ -348,9 +383,9 @@ function updateCountdown() {
 }
 
 // ============================================================
-// SORTEO
+// SORTEO (con Firebase)
 // ============================================================
-function startSorteo() {
+async function startSorteo() {
     if (groupData.participants.length < 3) {
         alert('Se necesitan al menos 3 participantes');
         return;
@@ -362,7 +397,6 @@ function startSorteo() {
         return;
     }
     
-    // Realizar el sorteo
     const assignments = realizarSorteo(readyParticipants);
     
     if (!assignments) {
@@ -372,28 +406,33 @@ function startSorteo() {
     
     groupData.assignments = assignments;
     groupData.sorteoRealizado = true;
-    saveGroupData();
     
-    alert('🎉 ¡Sorteo realizado! Cada participante puede entrar con su email para ver a quién le tocó.');
-    
-    // Si el admin está en la lista, mostrar su resultado
-    const adminParticipant = groupData.participants.find(p => p.isAdmin);
-    if (adminParticipant && assignments[adminParticipant.email]) {
-        currentUser = adminParticipant;
-        showResult();
+    try {
+        await db.collection('grupos').doc(groupData.id).update({
+            assignments: assignments,
+            sorteoRealizado: true
+        });
+        
+        alert('🎉 ¡Sorteo realizado! Cada participante puede entrar con su email para ver a quién le tocó.');
+        
+        const userEmail = localStorage.getItem('nikolaus-user-email');
+        if (userEmail && assignments[userEmail]) {
+            currentUser = groupData.participants.find(p => p.email === userEmail);
+            showResult();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al guardar el sorteo');
     }
 }
 
 function realizarSorteo(participants) {
-    // Algoritmo de sorteo que garantiza que nadie se regale a sí mismo
     const emails = participants.map(p => p.email);
     let shuffled = [...emails];
     
-    // Intentar hasta 100 veces encontrar una asignación válida
     for (let attempt = 0; attempt < 100; attempt++) {
         shuffled = shuffleArray([...emails]);
         
-        // Verificar que nadie se tenga a sí mismo
         let valid = true;
         for (let i = 0; i < emails.length; i++) {
             if (emails[i] === shuffled[i]) {
@@ -434,10 +473,8 @@ function showResult() {
         return;
     }
     
-    // Mostrar nombre
     document.getElementById('secret-friend-name').textContent = assignedPerson.name;
     
-    // Mostrar lista de deseos
     const wishlistContainer = document.getElementById('friend-wishlist');
     wishlistContainer.innerHTML = '';
     
@@ -450,11 +487,9 @@ function showResult() {
         wishlistContainer.appendChild(li);
     });
     
-    // Mostrar presupuesto
     document.getElementById('result-budget-min').textContent = groupData.budgetMin;
-    document.getElementById('result-budget-max').textContent = groupData.budgetMax;
+    document.getElementById('result-budget-max').textContent = groupData.budgetMax || '∞';
     
-    // Actualizar nombre en el asistente de regalos
     document.querySelectorAll('.friend-name-placeholder').forEach(el => {
         el.textContent = assignedPerson.name;
     });
@@ -466,14 +501,11 @@ function showResult() {
 // ASISTENTE DE REGALOS UI
 // ============================================================
 function showGiftOption(option) {
-    // Ocultar pregunta inicial
     document.querySelector('.ai-question').style.display = 'none';
     
-    // Ocultar ambas opciones
     document.getElementById('gift-option-know').classList.add('hidden');
     document.getElementById('gift-option-help').classList.add('hidden');
     
-    // Mostrar la opción seleccionada
     if (option === 'know') {
         document.getElementById('gift-option-know').classList.remove('hidden');
     } else {
@@ -494,30 +526,26 @@ function showKnowStore(knows) {
 
 function checkPrice() {
     const price = parseInt(document.getElementById('gift-price-known').value);
-    const link = document.getElementById('gift-link-known').value;
     
     if (!price) {
         alert('Por favor ingresa el precio');
         return;
     }
     
-    if (price >= groupData.budgetMin && price <= groupData.budgetMax) {
-        alert(`✅ ¡Perfecto! S/.${price} está dentro del presupuesto (S/.${groupData.budgetMin} - S/.${groupData.budgetMax})`);
+    const maxBudget = groupData.budgetMax || Infinity;
+    
+    if (price >= groupData.budgetMin && price <= maxBudget) {
+        alert(`✅ ¡Perfecto! S/.${price} está dentro del presupuesto`);
     } else if (price < groupData.budgetMin) {
         alert(`⚠️ S/.${price} está por debajo del presupuesto mínimo (S/.${groupData.budgetMin})`);
     } else {
-        alert(`⚠️ S/.${price} excede el presupuesto máximo (S/.${groupData.budgetMax}). ¿Quieres buscar opciones más económicas?`);
+        alert(`⚠️ S/.${price} excede el presupuesto máximo (S/.${groupData.budgetMax})`);
     }
 }
 
 // ============================================================
 // UTILIDADES
 // ============================================================
-function saveGroupData() {
-    localStorage.setItem('nikolaus-group-' + groupData.id, JSON.stringify(groupData));
-    localStorage.setItem('nikolaus-current-group', groupData.id);
-}
-
 function formatDate(dateString) {
     const date = new Date(dateString);
     const options = { year: 'numeric', month: 'long', day: 'numeric' };

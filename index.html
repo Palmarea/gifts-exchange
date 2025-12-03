@@ -153,9 +153,22 @@
             <!-- PANTALLA 4: Unirse a grupo -->
             <section class="screen" id="screen-join-group">
                 <div class="card">
-                    <button class="back-btn" onclick="showScreen('screen-welcome')">← Volver</button>
-                    <h2>Únete al intercambio</h2>
-                    <p class="subtitle">Ingresa tus datos para participar</p>
+                    <div class="invite-header">
+                        <span class="invite-icon">🎄</span>
+                        <h2>¡Te invitaron!</h2>
+                        <p class="invite-group-name" id="invite-group-name"></p>
+                    </div>
+                    
+                    <div class="invite-details">
+                        <div class="invite-detail">
+                            <span class="detail-label">💰 Presupuesto:</span>
+                            <span class="detail-value">S/.<span id="invite-budget-min"></span> - S/.<span id="invite-budget-max"></span></span>
+                        </div>
+                        <div class="invite-detail">
+                            <span class="detail-label">📅 Fecha:</span>
+                            <span class="detail-value" id="invite-date"></span>
+                        </div>
+                    </div>
                     
                     <form id="form-join-group" onsubmit="joinGroup(event)">
                         <div class="form-group">
@@ -169,7 +182,7 @@
                         </div>
                         
                         <button type="submit" class="btn btn-primary btn-full">
-                            Continuar a mi lista de deseos →
+                            Unirme y crear mi lista de deseos ✨
                         </button>
                     </form>
                 </div>
@@ -357,8 +370,13 @@
         </footer>
     </div>
 
-    <!-- Scripts -->
-    <script src="js/app.js"></script>
-    <script src="js/ai-gifts.js"></script>
-</body>
+        <!-- Firebase -->
+        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+        <!-- Scripts -->
+        <script src="js/firebase-config.js"></script>
+        <script src="js/app.js"></script>
+        <script src="js/ai-gifts.js"></script>
+        </body>
 </html>
