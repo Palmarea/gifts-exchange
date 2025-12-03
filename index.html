@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Seasonal Gift Exchange</title>
+    
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Nieve cayendo -->
+    <div class="snowflakes" aria-hidden="true">
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+    </div>
+
+<!-- Música navideña elegante -->
+<!-- Música navideña elegante -->
+<audio id="christmas-music" loop>
+    <source src="assets/luismiguel1song.mp3" type="audio/mpeg">
+</audio>
+<button class="music-toggle" id="music-toggle" title="Música">
+    🎵
+</button>
+
+    <!-- Contenedor principal -->
+    <div class="container">
+        
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">❄</span>
+                <h1>Nikolaus</h1>
+                <span class="logo-tagline">Secret Santa</span>
+            </div>
+        </header>
+
+        <!-- Pantallas dinámicas -->
+        <main class="main-content">
+            
+            <!-- PANTALLA 1: Bienvenida -->
+            <section class="screen active" id="screen-welcome">
+                <div class="card">
+                    <h2>Welcome</h2>
+                    <p class="subtitle">Un intercambio de regalos exclusivo para almas selectas</p>
+                    
+                    <div class="buttons-group">
+                        <button class="btn btn-primary" onclick="showScreen('screen-create-group')">
+                            Crear nuevo grupo
+                        </button>
+                        <button class="btn btn-secondary" onclick="showScreen('screen-join-group')">
+                            Unirme a un grupo
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PANTALLA 2: Crear grupo -->
+            <section class="screen" id="screen-create-group">
+                <div class="card">
+                    <button class="back-btn" onclick="showScreen('screen-welcome')">← Volver</button>
+                    <h2>Crear tu círculo</h2>
+                    <p class="subtitle">Configura los detalles de tu intercambio</p>
+                    
+                    <form id="form-create-group" onsubmit="createGroup(event)">
+                        <div class="form-group">
+                            <label for="group-name">Nombre del grupo</label>
+                            <input type="text" id="group-name" placeholder="Ej: Navidad Familia Pérez" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="admin-name">Tu nombre</label>
+                            <input type="text" id="admin-name" placeholder="Ej: María" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="admin-email">Tu correo electrónico</label>
+                            <input type="email" id="admin-email" placeholder="maria@email.com" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="budget-min">Presupuesto mínimo (S/.)</label>
+                                <input type="number" id="budget-min" placeholder="50" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="budget-max">Presupuesto máximo (S/.)</label>
+                                <input type="number" id="budget-max" placeholder="100" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="exchange-date">Fecha del intercambio</label>
+                            <input type="date" id="exchange-date" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-full">
+                            Crear grupo ✨
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- PANTALLA 3: Grupo creado - Invitar -->
+            <section class="screen" id="screen-group-created">
+                <div class="card">
+                    <div class="success-icon">✓</div>
+                    <h2>Grupo creado</h2>
+                    <p class="subtitle">Comparte este enlace con tus amigas</p>
+                    
+                    <div class="share-link-box">
+                        <input type="text" id="share-link" readonly>
+                        <button class="btn-copy" onclick="copyLink()">Copiar</button>
+                    </div>
+                    
+                    <div class="group-info">
+                        <p><strong>Grupo:</strong> <span id="display-group-name"></span></p>
+                        <p><strong>Presupuesto:</strong> S/.<span id="display-budget-min"></span> - S/.<span id="display-budget-max"></span></p>
+                        <p><strong>Fecha:</strong> <span id="display-date"></span></p>
+                    </div>
+
+                    <div class="participants-section">
+                        <h3>Participantes (<span id="participant-count">1</span>/10)</h3>
+                        <ul id="participants-list" class="participants-list">
+                            <!-- Se llena dinámicamente -->
+                        </ul>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-full" id="btn-start-sorteo" onclick="startSorteo()" disabled>
+                        🎁 Iniciar sorteo (mínimo 3 personas)
+                    </button>
+                </div>
+            </section>
+
+            <!-- PANTALLA 4: Unirse a grupo -->
+            <section class="screen" id="screen-join-group">
+                <div class="card">
+                    <button class="back-btn" onclick="showScreen('screen-welcome')">← Volver</button>
+                    <h2>Únete al intercambio</h2>
+                    <p class="subtitle">Ingresa tus datos para participar</p>
+                    
+                    <form id="form-join-group" onsubmit="joinGroup(event)">
+                        <div class="form-group">
+                            <label for="participant-name">Tu nombre</label>
+                            <input type="text" id="participant-name" placeholder="Ej: Ana" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="participant-email">Tu correo electrónico</label>
+                            <input type="email" id="participant-email" placeholder="ana@email.com" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-full">
+                            Continuar a mi lista de deseos →
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- PANTALLA 5: Lista de deseos -->
+            <section class="screen" id="screen-wishlist">
+                <div class="card">
+                    <h2>Tu lista de deseos</h2>
+                    <p class="subtitle">Agrega 3 cosas que te gustaría recibir</p>
+                    
+                    <form id="form-wishlist" onsubmit="saveWishlist(event)">
+                        <div class="wish-item">
+                            <span class="wish-number">1</span>
+                            <div class="wish-inputs">
+                                <input type="text" class="wish-name" placeholder="¿Qué deseas?" required>
+                                <input type="url" class="wish-link" placeholder="Link de referencia (opcional)">
+                            </div>
+                        </div>
+                        
+                        <div class="wish-item">
+                            <span class="wish-number">2</span>
+                            <div class="wish-inputs">
+                                <input type="text" class="wish-name" placeholder="¿Qué deseas?" required>
+                                <input type="url" class="wish-link" placeholder="Link de referencia (opcional)">
+                            </div>
+                        </div>
+                        
+                        <div class="wish-item">
+                            <span class="wish-number">3</span>
+                            <div class="wish-inputs">
+                                <input type="text" class="wish-name" placeholder="¿Qué deseas?" required>
+                                <input type="url" class="wish-link" placeholder="Link de referencia (opcional)">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-full">
+                            Guardar mi lista ✨
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- PANTALLA 6: Esperando sorteo -->
+            <section class="screen" id="screen-waiting">
+                <div class="card">
+                    <div class="waiting-icon">⏳</div>
+                    <h2>Lista guardada</h2>
+                    <p class="subtitle">Esperando a que todos completen su lista y el admin inicie el sorteo...</p>
+                    
+                    <div class="countdown-box">
+                        <p>Faltan para el intercambio:</p>
+                        <div class="countdown" id="countdown">
+                            <div class="countdown-item">
+                                <span class="countdown-number" id="countdown-days">--</span>
+                                <span class="countdown-label">días</span>
+                            </div>
+                            <div class="countdown-item">
+                                <span class="countdown-number" id="countdown-hours">--</span>
+                                <span class="countdown-label">horas</span>
+                            </div>
+                            <div class="countdown-item">
+                                <span class="countdown-number" id="countdown-minutes">--</span>
+                                <span class="countdown-label">min</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PANTALLA 7: Resultado - Tu amiga secreta -->
+            <section class="screen" id="screen-result">
+                <div class="card">
+                    <div class="result-reveal">
+                        <span class="gift-icon">🎁</span>
+                        <h2>Tu amiga secreta es...</h2>
+                        <p class="secret-friend-name" id="secret-friend-name">Ana</p>
+                    </div>
+                    
+                    <div class="wishlist-reveal">
+                        <h3>Su lista de deseos:</h3>
+                        <ul class="friend-wishlist" id="friend-wishlist">
+                            <!-- Se llena dinámicamente -->
+                        </ul>
+                    </div>
+                    
+                    <div class="budget-reminder">
+                        <p>Presupuesto: <strong>S/.<span id="result-budget-min">50</span> - S/.<span id="result-budget-max">100</span></strong></p>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-full" onclick="showScreen('screen-gift-helper')">
+                        🤖 ¿Necesitas ayuda para elegir regalo?
+                    </button>
+                </div>
+            </section>
+
+            <!-- PANTALLA 8: Ayudante AI de regalos -->
+            <section class="screen" id="screen-gift-helper">
+                <div class="card">
+                    <button class="back-btn" onclick="showScreen('screen-result')">← Volver</button>
+                    <h2>Asistente de Regalos</h2>
+                    <p class="subtitle">Te ayudo a encontrar el regalo perfecto</p>
+                    
+                    <div class="ai-question">
+                        <p>¿Ya sabes qué regalarle a <span class="friend-name-placeholder">tu amiga</span>?</p>
+                        
+                        <div class="buttons-group">
+                            <button class="btn btn-primary" onclick="showGiftOption('know')">
+                                Sí, ya sé
+                            </button>
+                            <button class="btn btn-secondary" onclick="showGiftOption('help')">
+                                No, ayúdame
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Opción: Ya sé qué regalar -->
+                    <div class="gift-option hidden" id="gift-option-know">
+                        <div class="form-group">
+                            <label>¿Qué regalo tienes en mente?</label>
+                            <input type="text" id="gift-idea" placeholder="Ej: Perfume floral">
+                        </div>
+                        
+                        <div class="ai-question">
+                            <p>¿Sabes dónde comprarlo?</p>
+                            <div class="buttons-group">
+                                <button class="btn btn-small" onclick="showKnowStore(true)">Sí</button>
+                                <button class="btn btn-small btn-secondary" onclick="showKnowStore(false)">No</button>
+                            </div>
+                        </div>
+                        
+                        <div class="hidden" id="store-known">
+                            <div class="form-group">
+                                <label>Pega el link del producto:</label>
+                                <input type="url" id="gift-link-known" placeholder="https://...">
+                            </div>
+                            <div class="form-group">
+                                <label>Precio (S/.)</label>
+                                <input type="number" id="gift-price-known" placeholder="75">
+                            </div>
+                            <button class="btn btn-primary btn-full" onclick="checkPrice()">
+                                Verificar si está en presupuesto ✓
+                            </button>
+                        </div>
+                        
+                        <div class="hidden" id="store-unknown">
+                            <button class="btn btn-primary btn-full" onclick="searchGiftAI()">
+                                🔍 Buscar dónde comprarlo
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Opción: Necesito ayuda -->
+                    <div class="gift-option hidden" id="gift-option-help">
+                        <div class="form-group">
+                            <label>¿Qué le gusta a tu amiga? (además de su lista)</label>
+                            <textarea id="friend-likes" placeholder="Ej: Le gusta el maquillaje, los libros de romance, el color rosa..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>¿Alguna tienda de preferencia?</label>
+                            <input type="text" id="preferred-store" placeholder="Ej: Saga, Ripley, cualquiera...">
+                        </div>
+                        
+                        <button class="btn btn-primary btn-full" onclick="getAISuggestions()">
+                            🤖 Obtener sugerencias
+                        </button>
+                    </div>
+                    
+                    <!-- Resultados AI -->
+                    <div class="ai-results hidden" id="ai-results">
+                        <h3>🎁 Sugerencias para ti:</h3>
+                        <div id="ai-suggestions-list">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Hecho con cariño para intercambios especiales</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/ai-gifts.js"></script>
+</body>
+</html>
