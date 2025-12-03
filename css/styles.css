@@ -760,3 +760,21 @@ textarea {
         font-size: 2rem;
     }
 }
+
+/* === CHECKBOX SIN LÍMITE === */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-xs);
+    font-size: 0.85rem;
+    color: var(--color-gray);
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-gold);
+    cursor: pointer;
+}

@@ -41,6 +41,23 @@ function showScreen(screenId) {
 }
 
 // ============================================================
+// TOGGLE PRESUPUESTO MÁXIMO
+// ============================================================
+function toggleMaxBudget() {
+    const checkbox = document.getElementById('no-max-budget');
+    const maxInput = document.getElementById('budget-max');
+    
+    if (checkbox.checked) {
+        maxInput.disabled = true;
+        maxInput.value = '';
+        maxInput.placeholder = 'Sin límite';
+    } else {
+        maxInput.disabled = false;
+        maxInput.placeholder = '100';
+    }
+}
+
+// ============================================================
 // CONTROL DE MÚSICA
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
@@ -82,11 +99,12 @@ function createGroup(event) {
     const adminName = document.getElementById('admin-name').value;
     const adminEmail = document.getElementById('admin-email').value;
     const budgetMin = parseInt(document.getElementById('budget-min').value);
-    const budgetMax = parseInt(document.getElementById('budget-max').value);
+    const noMaxBudget = document.getElementById('no-max-budget').checked;
+    const budgetMax = noMaxBudget ? null : parseInt(document.getElementById('budget-max').value);
     const exchangeDate = document.getElementById('exchange-date').value;
     
     // Validar presupuesto
-    if (budgetMin >= budgetMax) {
+    if (budgetMax !== null && budgetMin >= budgetMax) {
         alert('El presupuesto mínimo debe ser menor al máximo');
         return;
     }
@@ -134,7 +152,7 @@ function updateGroupCreatedScreen() {
     // Mostrar info del grupo
     document.getElementById('display-group-name').textContent = groupData.name;
     document.getElementById('display-budget-min').textContent = groupData.budgetMin;
-    document.getElementById('display-budget-max').textContent = groupData.budgetMax;
+    document.getElementById('display-budget-max').textContent = groupData.budgetMax || '∞';
     document.getElementById('display-date').textContent = formatDate(groupData.exchangeDate);
     
     // Actualizar lista de participantes
@@ -192,11 +210,23 @@ function checkUrlForGroup() {
     const groupId = urlParams.get('group');
     
     if (groupId) {
-        // Intentar cargar el grupo
+        // Intentar cargar el grupo desde URL
         const savedGroup = localStorage.getItem('nikolaus-group-' + groupId);
         if (savedGroup) {
             groupData = JSON.parse(savedGroup);
             showScreen('screen-join-group');
+        }
+    } else {
+        // Si no hay grupo en URL, verificar si el usuario es admin de un grupo existente
+        const currentGroupId = localStorage.getItem('nikolaus-current-group');
+        if (currentGroupId) {
+            const savedGroup = localStorage.getItem('nikolaus-group-' + currentGroupId);
+            if (savedGroup) {
+                groupData = JSON.parse(savedGroup);
+                // Mostrar pantalla de admin con el grupo
+                updateGroupCreatedScreen();
+                showScreen('screen-group-created');
+            }
         }
     }
 }
@@ -504,3 +534,4 @@ window.startSorteo = startSorteo;
 window.showGiftOption = showGiftOption;
 window.showKnowStore = showKnowStore;
 window.checkPrice = checkPrice;
+window.toggleMaxBudget = toggleMaxBudget;

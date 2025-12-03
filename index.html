@@ -99,7 +99,11 @@
                             </div>
                             <div class="form-group">
                                 <label for="budget-max">Presupuesto máximo (S/.)</label>
-                                <input type="number" id="budget-max" placeholder="100" required>
+                                <input type="number" id="budget-max" placeholder="100">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="no-max-budget" onchange="toggleMaxBudget()">
+                                    Sin límite máximo
+                                </label>
                             </div>
                         </div>
                         
