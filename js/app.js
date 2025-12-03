@@ -259,14 +259,31 @@ async function joinGroup(event) {
     const name = document.getElementById('participant-name').value;
     const email = document.getElementById('participant-email').value;
     
-    // Verificar si el email ya existe
-    const existingParticipant = groupData.participants.find(p => p.email === email);
+    // Buscar por email O por nombre
+    const existingByEmail = groupData.participants.find(p => p.email.toLowerCase() === email.toLowerCase());
+    const existingByName = groupData.participants.find(p => p.name.toLowerCase() === name.toLowerCase());
     
-    if (existingParticipant) {
-        currentUser = existingParticipant;
+    if (existingByEmail) {
+        // Usuario ya existe por email
+        currentUser = existingByEmail;
         localStorage.setItem('nikolaus-user-email', email);
         
-        if (existingParticipant.wishlist.length >= 3) {
+        if (existingByEmail.wishlist.length >= 3) {
+            if (groupData.sorteoRealizado) {
+                showResult();
+            } else {
+                startCountdown();
+                showScreen('screen-waiting');
+            }
+        } else {
+            showScreen('screen-wishlist');
+        }
+    } else if (existingByName) {
+        // El nombre existe - dejar entrar si es la misma persona
+        currentUser = existingByName;
+        localStorage.setItem('nikolaus-user-email', existingByName.email);
+        
+        if (existingByName.wishlist.length >= 3) {
             if (groupData.sorteoRealizado) {
                 showResult();
             } else {
@@ -277,13 +294,6 @@ async function joinGroup(event) {
             showScreen('screen-wishlist');
         }
     } else {
-        // Verificar nombre único
-        const nameExists = groupData.participants.find(p => p.name.toLowerCase() === name.toLowerCase());
-        if (nameExists) {
-            alert('Ya existe alguien con ese nombre. Por favor usa otro nombre.');
-            return;
-        }
-        
         // Nuevo participante
         currentUser = {
             name: name,
